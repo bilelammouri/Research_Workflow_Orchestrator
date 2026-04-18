@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARA | Research Workflow Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050508;
+            color: #f1f5f9;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Canvas with Grid */
+        #canvas {
+            background-color: #050508;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            position: relative;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .glass {
+            background: rgba(17, 17, 25, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Draggable Node */
+        .node {
+            position: absolute;
+            width: 240px;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: grab;
+            z-index: 10;
+            user-select: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .node:active { cursor: grabbing; }
+        .node:hover { border-color: #6366f1; }
+
+        .node-executing {
+            border-color: #22d3ee !important;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .node-success {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Connections */
+        #svg-links {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .connector-path {
+            fill: none;
+            stroke: #334155;
+            stroke-width: 2;
+            transition: stroke 0.3s, stroke-width 0.3s;
+        }
+
+        .connector-active {
+            stroke: #6366f1;
+            stroke-width: 3;
+            stroke-dasharray: 8, 4;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -12; }
+        }
+
+        /* Sidebar Styling */
+        input, textarea {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 8px;
+            color: white;
+            font-size: 0.8rem;
+            width: 100%;
+            outline: none;
+        }
+        input:focus { border-color: #6366f1; }
+
+        .btn-run {
+            background: #6366f1;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: all 0.2s;
+        }
+        .btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5); }
+        .btn-run:active { transform: translateY(0); }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Header -->
+    <header class="h-16 flex items-center justify-between px-8 border-b border-white/5 glass z-50">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" class="w-8 h-8 rounded shadow-lg border border-white/10" alt="Logo">
+            <h1 class="font-bold text-sm tracking-widest uppercase">ARA <span class="text-indigo-400">Orchestrator</span></h1>
+        </div>
+        <button id="run-btn" class="btn-run px-6 py-2 rounded-lg text-xs font-bold text-white flex items-center gap-2">
+            <i data-lucide="play" class="w-4 h-4 fill-current"></i> Launch Deployment
+        </button>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-80 glass border-r border-white/5 p-6 flex flex-col gap-6 z-40">
+            <div>
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Parameters</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] text-gray-400 block mb-1 uppercase">Research Theme</label>
+                        <textarea id="theme-input" rows="3">Intergenerational Equity in Decarbonization</textarea>
+                    </div>
+                    <div class="flex gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-1 uppercase">Intro Pgs</label>
+                            <input type="number" id="intro-input" value="1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-1 uppercase">Total Words</label>
+                            <input type="number" id="word-input" value="3000">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Telemetry</h3>
+                <div id="logs" class="flex-1 font-mono text-[9px] text-indigo-300 overflow-y-auto space-y-2">
+                    <div class="opacity-50">[SYSTEM] Ready.</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Canvas -->
+        <main id="canvas">
+            <svg id="svg-links"></svg>
+            
+            <div id="nodes">
+                <!-- Node 1 -->
+                <div id="node-1" class="node glass" style="left: 100px; top: 100px;">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i data-lucide="search" class="w-5 h-5 text-indigo-400"></i>
+                        <span class="text-xs font-bold">Collector</span>
+                    </div>
+                    <div class="text-[9px] text-gray-500 mb-2">Stage 01: Scopus API</div>
+                    <div class="status flex items-center gap-2 text-[9px] text-gray-400">
+                        <i data-lucide="circle" class="w-2 h-2"></i> Standby
+                    </div>
+                </div>
+
+                <!-- Node 2 -->
+                <div id="node-2" class="node glass" style="left: 450px; top: 150px;">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i data-lucide="database" class="w-5 h-5 text-purple-400"></i>
+                        <span class="text-xs font-bold">Analyzer</span>
+                    </div>
+                    <div class="text-[9px] text-gray-500 mb-2">Stage 02: R Bibliometrics</div>
+                    <div class="status flex items-center gap-2 text-[9px] text-gray-400">
+                        <i data-lucide="circle" class="w-2 h-2"></i> Standby
+                    </div>
+                </div>
+
+                <!-- Node 3 -->
+                <div id="node-3" class="node glass" style="left: 100px; top: 300px;">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i data-lucide="bar-chart" class="w-5 h-5 text-cyan-400"></i>
+                        <span class="text-xs font-bold">Ranker</span>
+                    </div>
+                    <div class="text-[9px] text-gray-500 mb-2">Stage 03: ML Ranking</div>
+                    <div class="status flex items-center gap-2 text-[9px] text-gray-400">
+                        <i data-lucide="circle" class="w-2 h-2"></i> Standby
+                    </div>
+                </div>
+
+                <!-- Node 4 -->
+                <div id="node-4" class="node glass" style="left: 450px; top: 350px;">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i data-lucide="file-text" class="w-5 h-5 text-emerald-400"></i>
+                        <span class="text-xs font-bold">Drafter</span>
+                    </div>
+                    <div class="text-[9px] text-gray-500 mb-2">Stage 04: LaTeX Synthesis</div>
+                    <div class="status flex items-center gap-2 text-[9px] text-gray-400">
+                        <i data-lucide="circle" class="w-2 h-2"></i> Standby
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // ─────────────────────────────────────────────────────────────────
+        // 1. DRAG & DROP SYSTEM (ROBUST)
+        // ─────────────────────────────────────────────────────────────────
+        let activeElement = null;
+        let startPos = { x: 0, y: 0 };
+        let offset = { x: 0, y: 0 };
+
+        const nodesList = document.querySelectorAll('.node');
+        nodesList.forEach(node => {
+            node.onmousedown = (e) => {
+                activeElement = node;
+                startPos = { x: e.clientX, y: e.clientY };
+                offset = { x: node.offsetLeft, y: node.offsetTop };
+                node.style.zIndex = 1000;
+                e.preventDefault();
+            };
+        });
+
+        document.onmousemove = (e) => {
+            if (!activeElement) return;
+            const dx = e.clientX - startPos.x;
+            const dy = e.clientY - startPos.y;
+            activeElement.style.left = (offset.x + dx) + 'px';
+            activeElement.style.top = (offset.y + dy) + 'px';
+            updateAllLinks();
+        };
+
+        document.onmouseup = () => {
+            if (activeElement) activeElement.style.zIndex = 10;
+            activeElement = null;
+        };
+
+        // ─────────────────────────────────────────────────────────────────
+        // 2. CONNECTION ENGINE (DYNAMIC BEZIER)
+        // ─────────────────────────────────────────────────────────────────
+        function updateAllLinks() {
+            const svg = document.getElementById('svg-links');
+            svg.innerHTML = '';
+            
+            // Connections: 1->2, 2->3, 3->4
+            drawLink('node-1', 'node-2');
+            drawLink('node-2', 'node-3');
+            drawLink('node-3', 'node-4');
+        }
+
+        function drawLink(idA, idB) {
+            const a = document.getElementById(idA);
+            const b = document.getElementById(idB);
+            const canvas = document.getElementById('canvas').getBoundingClientRect();
+            
+            const r1 = a.getBoundingClientRect();
+            const r2 = b.getBoundingClientRect();
+
+            const x1 = r1.right - canvas.left;
+            const y1 = r1.top + r1.height / 2 - canvas.top;
+            const x2 = r2.left - canvas.left;
+            const y2 = r2.top + r2.height / 2 - canvas.top;
+
+            const cp = x1 + (x2 - x1) / 2;
+            const pathData = `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", pathData);
+            path.setAttribute("class", "connector-path");
+            if (a.classList.contains('node-executing')) path.classList.add('connector-active');
+            
+            document.getElementById('svg-links').appendChild(path);
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // 3. EXECUTION MOTOR (SERVER SYNC)
+        // ─────────────────────────────────────────────────────────────────
+        document.getElementById('run-btn').onclick = async () => {
+            const theme = document.getElementById('theme-input').value;
+            const intro = document.getElementById('intro-input').value;
+            const words = document.getElementById('word-input').value;
+
+            addLog(`[SYNC] Updating agent_config.json with theme: ${theme.slice(0, 20)}...`);
+
+            try {
+                // UPDATE CONFIG
+                const res1 = await fetch('http://localhost:8000/api/update_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        project_title: theme,
+                        intro_word_count: parseInt(intro) * 200, // Pages to words conversion
+                        review_word_count: parseInt(words)
+                    })
+                });
+
+                if (!res1.ok) throw new Error("Server Sync Failed");
+                addLog(`[SYNC] Configuration persistent.`);
+
+                // EXECUTE SEQUENCE
+                const seq = ['node-1', 'node-2', 'node-3', 'node-4'];
+                for (const id of seq) {
+                    const node = document.getElementById(id);
+                    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    node.classList.add('node-executing');
+                    const status = node.querySelector('.status');
+                    status.innerHTML = '<i data-lucide="loader-2" class="w-2 h-2 animate-spin"></i> Processing...';
+                    lucide.createIcons();
+                    updateAllLinks();
+
+                    addLog(`[RUN] Executing node: ${id}`);
+                    
+                    try {
+                        await fetch('http://localhost:8000/api/run', {
+                            method: 'POST',
+                            body: JSON.stringify({ node_id: id })
+                        });
+                        // Simulate delay for visualization (Real scripts run in background)
+                        await new Promise(r => setTimeout(r, 6000));
+                    } catch(e) {}
+
+                    node.classList.remove('node-executing');
+                    node.classList.add('node-success');
+                    status.innerHTML = '<i data-lucide="check-circle" class="w-2 h-2 text-emerald-400"></i> Success';
+                    lucide.createIcons();
+                    addLog(`[DONE] Node ${id} finished.`);
+                    updateAllLinks();
+                }
+
+                addLog("[FINISH] Pipeline complete. check root for main.pdf");
+
+            } catch (err) {
+                addLog(`[ERROR] Fatal: ${err.message}. Is server.py running?`, true);
+            }
+        };
+
+        function addLog(msg, isError = false) {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.style.color = isError ? '#ef4444' : '#a5b4fc';
+            div.innerText = `[${new Date().toLocaleTimeString().slice(0,5)}] ${msg}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        window.onload = updateAllLinks;
+    </script>
+</body>
+</html>

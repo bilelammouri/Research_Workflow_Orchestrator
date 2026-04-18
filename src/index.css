@@ -1,0 +1,105 @@
+:root {
+  --bg-dark: #0a0a0c;
+  --bg-card: rgba(26, 26, 30, 0.8);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --primary: #6366f1;
+  --secondary: #a855f7;
+  --accent: #22d3ee;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glow-primary {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
+/* React Flow Customization */
+.react-flow__pane {
+  background-image: radial-gradient(circle, #222 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.react-flow__edge-path {
+  stroke-width: 3;
+  stroke: var(--primary);
+  filter: drop-shadow(0 0 5px var(--primary));
+}
+
+.react-flow__node {
+  border-radius: 12px;
+  background: transparent;
+  padding: 0;
+  border: none !important;
+}
+
+.node-container {
+  padding: 1rem;
+  min-width: 200px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.node-container:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.node-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+}
+
+.node-success {
+  border-color: var(--success);
+}
+
+.handle-custom {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--primary) !important;
+  border: 2px solid var(--bg-dark) !important;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.anim-pulse {
+  animation: pulse-glow 2s infinite ease-in-out;
+}

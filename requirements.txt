@@ -1,0 +1,6 @@
+pandas
+requests
+requests-toolbelt
+pydantic
+python-dotenv
+# Note: Bibliometrix analysis requires R (4.2+) and the 'bibliometrix' package installed in R.

@@ -1,0 +1,26 @@
+# API Keys & Sensitive Data
+agent_config.json
+
+# Local Research Data (Temp)
+core/results.bib
+core/scopus_metadata.csv
+core/ranked_articles.json
+core/paper_metrics.csv
+core/*.png
+
+# LaTeX Outputs
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+core/main.pdf
+core/synthetic_content.tex
+
+# Python/Node Environment
+__pycache__/
+node_modules/
+.DS_Store
+*.pyc
