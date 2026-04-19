@@ -14,7 +14,7 @@ def get_config():
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {
-        "scopus_api_key": "ade7466450720df2422d3b3275ddc2a6",
+        "scopus_api_key": "",
         "article_count": 50,
         "project_title": "Intergenerational Equity in Decarbonization"
     }
