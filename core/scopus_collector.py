@@ -15,38 +15,11 @@ def get_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    return {}
-
-def suggest_boolean_query(client, model_id, theme):
-    """Uses Gemini to generate an optimized Scopus boolean query."""
-    print(f"[Collector] Consulting AI for optimized query on theme: '{theme}'...")
-    
-    prompt = f"""
-    You are a bibliometric expert. Generate a professional Scopus boolean search query for the theme: "{theme}".
-    
-    Requirements:
-    1. Use TITLE-ABS-KEY(...) format.
-    2. Include synonyms and related academic terms.
-    3. Use logical operators (AND, OR, wildcard *).
-    4. Ensure the query is highly targeted to high-impact research.
-    5. Return ONLY the string of the query itself.
-    
-    Example output: TITLE-ABS-KEY("artificial intelligence" AND "healthcare" OR "medical diagnosis")
-    """
-    
-    try:
-        response = client.models.generate_content(
-            model=model_id,
-            contents=prompt
-        )
-        query = response.text.strip().replace("`", "")
-        # Basic validation: ensure it has TITLE-ABS-KEY
-        if "TITLE-ABS-KEY" not in query:
-            query = f"TITLE-ABS-KEY({query})"
-        return query
-    except Exception as e:
-        print(f"[Warn] AI query generation failed: {e}. Falling back to basic search.")
-        return f'TITLE-ABS-KEY("{theme}")'
+    return {
+        "scopus_api_key": "ade7466450720df2422d3b3275ddc2a6",
+        "article_count": 50,
+        "project_title": "Intergenerational Equity in Decarbonization"
+    }
 
 def generate_boolean_query(theme, fallback=False):
     """Fallback manual query generation if AI is not used."""
