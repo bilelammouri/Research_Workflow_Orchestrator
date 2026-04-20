@@ -9,8 +9,24 @@ const App = () => {
   const [activeNode, setActiveNode] = useState(null);
   const [nodeStatus, setNodeStatus] = useState({}); // { 'node-1': 'success', 'node-2': 'executing' }
   const [logs, setLogs] = useState(["[System] Orchestrator ready."]);
+  const [config, setConfig] = useState({ theme_description: "", project_title: "", review_word_count: 3000 });
+
+  React.useEffect(() => {
+    axios.get(`${API_BASE}/config`)
+      .then(res => { if(res.data) setConfig(c => ({...c, ...res.data})); })
+      .catch(err => addLog(`Config init error: ${err.message}`));
+  }, []);
 
   const addLog = (msg) => setLogs(prev => [...prev.slice(-10), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+
+  const saveConfig = async () => {
+    try {
+        await axios.post(`${API_BASE}/update_config`, config);
+        addLog(`Config saved for: ${config.project_title}`);
+    } catch(err) {
+        addLog(`Failed to save config: ${err.message}`);
+    }
+  };
 
   const runNode = async (nodeId) => {
     setNodeStatus(prev => ({ ...prev, [nodeId]: 'executing' }));
@@ -57,11 +73,22 @@ const App = () => {
           <div>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' }}>CONFIGURATIONS</span>
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Research Theme</label>
-                    <div style={{ fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                        Intergenerational Equity in Decarbonization
+                <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project Title</label>
+                        <input value={config.project_title || ''} onChange={e => setConfig({...config, project_title: e.target.value})} style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }} />
                     </div>
+                    <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Theme Context</label>
+                        <textarea value={config.theme_description || ''} onChange={e => setConfig({...config, theme_description: e.target.value})} style={{ width: '100%', minHeight: '60px', padding: '0.5rem', marginTop: '0.25rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px', resize: 'vertical' }} />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Target Words</label>
+                        <input type="number" value={config.review_word_count || 3000} onChange={e => setConfig({...config, review_word_count: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }} />
+                    </div>
+                    <button onClick={saveConfig} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', cursor: 'pointer', marginTop: '0.5rem', fontSize: '0.8rem' }}>
+                        Save Config
+                    </button>
                 </div>
                 <button onClick={startFullWorkflow} className="glow-primary" style={{ background: 'var(--primary)', color: 'white', padding: '1rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
                     <Play size={20} fill="white" /> Launch Sequence
