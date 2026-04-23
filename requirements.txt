@@ -3,4 +3,5 @@ requests
 requests-toolbelt
 pydantic
 python-dotenv
+google-genai
 # Note: Bibliometrix analysis requires R (4.2+) and the 'bibliometrix' package installed in R.

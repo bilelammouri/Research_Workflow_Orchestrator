@@ -70,7 +70,7 @@ class OrchestratorHandler(http.server.BaseHTTPRequestHandler):
         elif self.path == '/api/run':
             node_id = data.get('node_id')
             script_map = {
-                'node-1': 'core/scopus_collector.py',
+                'node-1': 'core/orchestrate_collection.py',
                 'node-2': 'core/analysis_engine.R',
                 'node-3': 'core/paper_ranker.py',
                 'node-4': 'core/review_drafter.py'

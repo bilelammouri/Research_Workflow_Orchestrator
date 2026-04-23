@@ -134,6 +134,20 @@
                         <textarea id="theme-input" rows="3">Intergenerational Equity in Decarbonization</textarea>
                     </div>
                     <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-gray-400 block mb-1 uppercase">Data Source</label>
+                            <select id="source-input" class="bg-black/40 border border-white/10 rounded-md p-2 text-[10px] w-full text-white outline-none focus:border-indigo-500">
+                                <option value="scopus">Scopus (Elsevier)</option>
+                                <option value="openalex" selected>OpenAlex (Free)</option>
+                                <option value="both">Both (Merged)</option>
+                            </select>
+                        </div>
+                        <div class="w-1/3">
+                            <label class="text-[10px] text-gray-400 block mb-1 uppercase">Max Articles</label>
+                            <input type="number" id="count-input" value="50">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
                         <div>
                             <label class="text-[10px] text-gray-400 block mb-1 uppercase">Intro Pgs</label>
                             <input type="number" id="intro-input" value="1">
@@ -165,7 +179,7 @@
                         <i data-lucide="search" class="w-5 h-5 text-indigo-400"></i>
                         <span class="text-xs font-bold">Collector</span>
                     </div>
-                    <div class="text-[9px] text-gray-500 mb-2">Stage 01: Scopus API</div>
+                    <div class="text-[9px] text-gray-500 mb-2">Stage 01: Data Collection</div>
                     <div class="status flex items-center gap-2 text-[9px] text-gray-400">
                         <i data-lucide="circle" class="w-2 h-2"></i> Standby
                     </div>
@@ -289,6 +303,8 @@
             const theme = document.getElementById('theme-input').value;
             const intro = document.getElementById('intro-input').value;
             const words = document.getElementById('word-input').value;
+            const source = document.getElementById('source-input').value;
+            const count = document.getElementById('count-input').value;
 
             addLog(`[SYNC] Updating agent_config.json with theme: ${theme.slice(0, 20)}...`);
 
@@ -299,8 +315,11 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         project_title: theme,
+                        theme_description: theme,
                         intro_word_count: parseInt(intro) * 200, // Pages to words conversion
-                        review_word_count: parseInt(words)
+                        review_word_count: parseInt(words),
+                        data_source: source,
+                        article_count: parseInt(count)
                     })
                 });
 
