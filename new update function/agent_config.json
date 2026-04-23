@@ -1,0 +1,11 @@
+{
+    "author_name": "Bilel Ammouri",
+    "project_title": "Intergenerational Equity in Decarbonization and Fiscal Policy",
+    "scopus_api_key": "ade7466450720df2422d3b3275ddc2a6",
+    "article_count": 50,
+    "intro_word_count": 200,
+    "review_word_count": 3000,
+    "theme_description": "Comment concevoir des politiques de décarbonation et des structures fiscales qui garantissent l'équité intergénérationnelle sans aggraver les inégalités de revenus et de patrimoine ?",
+    "gemini_api_key": "AIzaSyBHh8FE6Co54iVRlyTD6yrn7hPCtQeARhY",
+    "model_name": "gemini-3.1-flash-lite-preview"
+}
